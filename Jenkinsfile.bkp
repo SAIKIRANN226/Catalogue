@@ -25,7 +25,7 @@ pipeline {
     }
     // build
     stages {
-        stage('Get the version') {
+        stage('Get the version') { // To read json file in pipeline we have "Pipeline Utility steps" plugin install this jenkins UI
             steps {
                 script {
                     def packageJson = readJSON file: 'package.json'
