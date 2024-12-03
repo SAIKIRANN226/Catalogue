@@ -48,7 +48,7 @@ pipeline {
                 """
             }
         }
-        stage('Build') {
+        stage('Build') { // Line 55 zip files and folders with excluded files (google) where |-q=to silent the zip command log; ./*=everything; -x=exclude; *.zip=we can exclude another zip if we run the command again|
             steps {
                 sh """
                     ls -la
