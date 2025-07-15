@@ -5,8 +5,8 @@ pipeline {
         }
     }
     environment { 
-        packageVersion = ''
-        nexusURL = '172.31.5.95:8081'
+        packageVersion = '' // Empty because we are taking version dynamically
+        nexusURL = '172.31.5.95:8081' // Port number is mandatory otherwise it will not upload to the nexus repo
     }
     options {
         timeout(time: 1, unit: 'HOURS')
@@ -18,16 +18,16 @@ pipeline {
 
     // Build
     stages {
-        stage('Get the version') { // To read json file in pipeline we have "Pipeline Utility steps" plugin install this in jenkins UI
+        stage('Get the version') { // To read json file in pipeline, we have "Pipeline Utility steps" plugin install this in jenkins UI
             steps {
-                script { // It is a groovy scripting thats why we put the word "script" not shellscript
-                    def packageJson = readJSON file: 'package.json'
-                    packageVersion = packageJson.version
+                script { // It is a groovy scripting thats why we put the word "script" not "sh"
+                    def packageJson = readJSON file: 'package.json' // def is nothing but we are defining a variable
+                    packageVersion = packageJson.version // Giving value to the environment variable "packageVersion"
                     echo "application version: $packageVersion"
                 }
             }
         }
-        stage('Install dependencies') {
+        stage('Install dependencies') { // Here npm will not install in agent, because there is no nodejs is installed in agent, so install nodejs using catalogue documentation in /home/centos location
             steps {
                 sh """
                     npm install
@@ -48,7 +48,7 @@ pipeline {
                 """
             }
         }
-        stage('Build') { // Line 55 zip files and folders with excluded files (google) where |-q=to silent the zip command log; ./*=everything; -x=exclude; *.zip=we can exclude another zip if we run the command again|
+        stage('Build') { // Line 55 "zip files and folders with excluded files" type this in google. Where | -q = to silent the zip command log | -r = recurssive | ./* = everything | -x = exclude | *.zip = we can exclude another zip if we run the command again. Why we silent log ? Because it is taking lot of memory
             steps {
                 sh """
                     ls -la
@@ -57,7 +57,7 @@ pipeline {
                 """
             }
         }
-        stage('Publish Artifact') { // Search in the google for the below syntax "nexus artifact uploader"
+        stage('Publish Artifact') { // Search in google for the below syntax "nexus artifact uploader"
             steps {
                  nexusArtifactUploader(
                     nexusVersion: 'nexus3',
@@ -66,7 +66,7 @@ pipeline {
                     groupId: 'com.roboshop',
                     version: "${packageVersion}",
                     repository: 'catalogue',
-                    credentialsId: 'nexus-auth',
+                    credentialsId: 'nexus-auth', // You need to add credentials in jenkins by going to manage jenkins/credentials/system/global credentials/add new and ID = nexus-auth
                     artifacts: [
                         [artifactId: 'catalogue',
                         classifier: '',
@@ -93,11 +93,10 @@ pipeline {
             }
         }
     }
-    // Post Build
     post { 
         always { 
             echo 'I will always say Hello again!'
-            deleteDir()
+            deleteDir() // This is must to delete this directory after pipeline success
         }
         failure { 
             echo 'this runs when pipeline is failed, used generally to send some alerts'
